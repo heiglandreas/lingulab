@@ -1,0 +1,29 @@
+{
+    "name": "org_heigl/lingulab",
+    "description": "PHP-Connector to the LinguLab-API",
+    "type": "lib",
+    "require": {
+        "ext-soap": "*",
+        "php": "^7.0"
+    },
+    "require-dev" : {
+        "phpunit/phpunit": "^6.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Andreas Heigl",
+            "email": "andreas@heigl.org"
+        }
+    ],
+    "autoload" : {
+        "psr-4" : {
+            "Org_Heigl\\LinguLab\\" : "src/"
+        }
+    },
+    "autoload-dev" : {
+        "psr-4" : {
+            "Org_Heigl\\LinguLabTest\\" : "tests/"
+        }
+    }
+}
