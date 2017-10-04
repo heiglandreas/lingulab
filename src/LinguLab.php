@@ -63,19 +63,60 @@ class LinguLab
         }
     }
 
+    public function getLanguages()
+    {
+        $parameters = [
+            'authenticationKey' => $this->token,
+        ];
+
+        $result = $this->client->GetLanguages($parameters);
+
+        $this->handleResponseErrorCode($result->GetLanguagesResult);
+
+        return $result->GetLanguagesResult;
+    }
+
+    public function getConfigurations(string $language)
+    {
+        $parameters = [
+            'authenticationKey' => $this->token,
+            'languageKey' => $language,
+        ];
+
+        $result = $this->client->GetConfigurations($parameters);
+
+        $this->handleResponseErrorCode($result->GetConfigurationsResult);
+
+        return $result->GetConfigurationsResult;
+
+    }
+
     public function processTextAdvanced(ProcessTextAdvancedToSoap $text) : stdClass
     {
         $parameters = [
-            'InputData' => $text(),
+            'inputData' => $text(),
             'authenticationKey' => $this->token,
         ];
 
         $result = $this->client->ProcessTextAdv($parameters);
 
-        var_dump($result    );
         $this->handleResponseErrorCode($result->ProcessTextAdvResult);
 
-        return $result;
+        return $result->ProcessTextAdvResult;
+    }
+
+    public function processText(ProcessTextAdvancedToSoap $text) : stdClass
+    {
+        $parameters = [
+            'inputData' => $text(),
+            'authenticationKey' => $this->token,
+        ];
+
+        $result = $this->client->ProcessText($parameters);
+
+        $this->handleResponseErrorCode($result->ProcessTextResult);
+
+        return $result->ProcessTextResult;
     }
 
     /**

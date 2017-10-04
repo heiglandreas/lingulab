@@ -176,7 +176,7 @@ class ProcessTextAdvanced
 
     public function hasLanguageKey() : bool
     {
-        return '' === $this->languageKey;
+        return '' !== $this->languageKey;
     }
 
     public function hasSearchKeyword1() : bool

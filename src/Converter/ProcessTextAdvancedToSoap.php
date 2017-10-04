@@ -42,43 +42,39 @@ class ProcessTextAdvancedToSoap
 
     public function __invoke() : \SoapVar
     {
-        $object = new \stdClass();
+        $object = [];
 
-        $object->Text = $this->item->getText();
+        $object[] = new \SoapVar($this->item->getText(), XSD_STRING, null, null, 'ns1:Text');
         if ($this->item->hasResultKey()) {
-            $object->ResultKey = $this->item->getResultKey();
+            $object[] = new \SoapVar($this->item->getResultKey(), XSD_INT, null, null, 'ns1:ResultKey');
         }
 
         if ($this->item->hasConfigurationId()) {
-            $object->ConfigurationId = $this->item->getConfigurationId();
+            $object[] = new \SoapVar($this->item->getConfigurationId(), XSD_STRING, null, null, 'ns1:ConfigurationId');
         }
 
         if (($this->item->hasLanguageKey())) {
-            $object->LanguageKey = $this->item->getLanguageKey();
+            $object[] = new \SoapVar($this->item->getLanguageKey(), XSD_STRING, null, null, 'ns1:LanguageKey');
         }
 
-        if (($this->item->hasSearchKeyword1())) {
-            $object->SearchKeyword1 = $this->item->getSearchKeyword1();
-        }
+        $object[] = new \SoapVar($this->item->getSearchKeyword1(), XSD_STRING, null, null, 'ns1:SearchKeyword1');
 
-        if (($this->item->hasSearchKeyword2())) {
-            $object->SearchKeyword2 = $this->item->getSearchKeyword2();
-        }
+        $object[] = new \SoapVar($this->item->getSearchKeyword2(), XSD_STRING, null, null, 'ns1:SearchKeyword1');
 
-        if (($this->item->hasSearchKeyword3())) {
-            $object->SearchKeyword3 = $this->item->getSearchKeyword3();
-        }
+        $object[] = new \SoapVar($this->item->getSearchKeyword3(), XSD_STRING, null, null, 'ns1:SearchKeyword2');
 
         if (($this->item->hasSectionTypeSettings())) {
             $converter = new SectionTypeToSoap($this->item->getSectionTypeSettings());
-            $object->SectionTypeSettings = $converter();
+            $object[] = new \SoapVar($converter(), SOAP_ENC_OBJECT, null, null, 'ns1:SectionTypeSettings');
         }
 
         if (($this->item->hasBackUrl())) {
             $converter = new BackUrlToSoap($this->item->getBackUrl());
-            $object->BackUrl = $converter();
+            $object[] = new \SoapVar($converter(), SOAP_ENC_OBJECT, null, null, 'ns1:BackUrl');
         }
 
+
+        error_log(print_r($object, true));
         return new \SoapVar($object, SOAP_ENC_OBJECT);
     }
 }
