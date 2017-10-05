@@ -30,7 +30,12 @@
 namespace Org_Heigl\LinguLab;
 
 use Org_Heigl\LinguLab\Converter\ProcessTextAdvancedToSoap;
-use Org_Heigl\LinguLab\Entity\ProcessTextAdvanced;
+use Org_Heigl\LinguLab\Result\Configuration;
+use Org_Heigl\LinguLab\Result\Configurations;
+use Org_Heigl\LinguLab\Result\Language;
+use Org_Heigl\LinguLab\Result\Languages;
+use Org_Heigl\LinguLab\Result\ProcessTextAdvanced as ProcessTextAdvancedResult;
+use Org_Heigl\LinguLab\Result\ProcessText as ProcessTextResult;
 use stdClass;
 
 class LinguLab
@@ -63,7 +68,7 @@ class LinguLab
         }
     }
 
-    public function getLanguages()
+    public function getLanguages() : Languages
     {
         $parameters = [
             'authenticationKey' => $this->token,
@@ -73,25 +78,42 @@ class LinguLab
 
         $this->handleResponseErrorCode($result->GetLanguagesResult);
 
-        return $result->GetLanguagesResult;
+        $languages = new Languages();
+        foreach ($result->GetLanguagesResult->Languages as $language) {
+            $languages->addLanguage(new Language(
+                filter_var($language->LanguageKey, FILTER_SANITIZE_STRING),
+                filter_var($language->Name, FILTER_SANITIZE_STRING)
+            ));
+        }
+        return $languages;
     }
 
-    public function getConfigurations(string $language)
+    public function getConfigurations(Language $language): Configurations
     {
         $parameters = [
             'authenticationKey' => $this->token,
-            'languageKey' => $language,
+            'languageKey' => $language->getId(),
         ];
 
         $result = $this->client->GetConfigurations($parameters);
 
         $this->handleResponseErrorCode($result->GetConfigurationsResult);
 
-        return $result->GetConfigurationsResult;
+        $configs = new Configurations();
+        foreach ($result->GetConfigurationsResult->Configurations as $config) {
+            $configs->addConfiguration(new Configuration(
+                filter_var($config->Id, FILTER_VALIDATE_INT),
+                filter_var($config->Name, FILTER_SANITIZE_STRING),
+                filter_var($config->Group, FILTER_SANITIZE_STRING),
+                filter_var($config->IsKeywordSupported, FILTER_VALIDATE_BOOLEAN)
+            ));
+        }
+
+        return $configs;
 
     }
 
-    public function processTextAdvanced(ProcessTextAdvancedToSoap $text) : stdClass
+    public function processTextAdvanced(ProcessTextAdvancedToSoap $text): ProcessTextAdvancedResult
     {
         $parameters = [
             'inputData' => $text(),
@@ -102,10 +124,15 @@ class LinguLab
 
         $this->handleResponseErrorCode($result->ProcessTextAdvResult);
 
-        return $result->ProcessTextAdvResult;
+        return new ProcessTextAdvancedResult(
+            $result->ProcessTextAdvResult->ResultId,
+            $result->ProcessTextAdvResult->Measure,
+            $result->ProcessTextAdvResult->LinkOnResultPage,
+            $result->ProcessTextAdvResult->MeasureStarsHtml
+        );
     }
 
-    public function processText(ProcessTextAdvancedToSoap $text) : stdClass
+    public function processText(ProcessTextAdvancedToSoap $text): ProcessTextResult
     {
         $parameters = [
             'inputData' => $text(),
@@ -116,8 +143,12 @@ class LinguLab
 
         $this->handleResponseErrorCode($result->ProcessTextResult);
 
-        return $result->ProcessTextResult;
-    }
+        return new ProcessTextResult(
+            $result->ProcessTextResult->ResultId,
+            $result->ProcessTextResult->Measure,
+            $result->ProcessTextResult->LinkOnResultPage,
+            $result->ProcessTextResult->MeasureStarsHtml
+        );    }
 
     /**
      * @param stdClass $response
@@ -133,17 +164,39 @@ class LinguLab
 
         switch ($response->ErrorCode) {
             case 101:
-                throw LinguLabException::authenticationFailed();
+            case 131:
+            case 141:
+                throw LinguLabException::authenticationFailed($response->ErrorMessage, $response->ErrorCode);
             case 102:
-                throw LinguLabException::authenticationSessionStillOpen();
+                throw LinguLabException::authenticationSessionStillOpen($response->ErrorMessage);
             case 103:
-                throw LinguLabException::loginLimitExceeded();
+                throw LinguLabException::loginLimitExceeded($response->ErrorMessage);
             case 104:
-                throw LinguLabException::wrongPluginKey();
+                throw LinguLabException::wrongPluginKey($response->ErrorMessage);
+            case 132:
+            case 142:
+                throw LinguLabException::authenticationKeyWasExpired($response->ErrorMessage, $response->ErrorCode);
+            case 133:
+            case 143:
+                throw LinguLabException::lackOfPermission($response->ErrorMessage, $response->ErrorCode);
+            case 230:
+                throw LinguLabException::wrongParameter($response->ErrorMessage, 230, 'Some fields in input data are missed, detailed information should be provided in error message');
+            case 231:
+                throw LinguLabException::processingTextLengthError($response->ErrorMessage);
+            case 232:
+                throw LinguLabException::gettingConfigurationFileFailed($response->ErrorMessage);
+            case 233:
+                throw LinguLabException::wrongLanguage($response->ErrorMessage);
+            case 240:
+                throw LinguLabException::wrongParameter($response->ErrorMessage);
+            case 241:
+                throw LinguLabException::wrongResultKey($response->ErrorMessage);
             case 300:
-                throw LinguLabException::internalError();
+            case 330:
+            case 340:
+                throw LinguLabException::internalError($response->ErrorMessage, $response->ErrorCode);
             default:
-                throw LinguLabException::genericError($response->ErrorCode);
+                throw LinguLabException::genericError($response->ErrorMessage, $response->ErrorCode);
 
         }
     }
